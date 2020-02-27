@@ -1,96 +1,145 @@
-function scrollToElement(target, offset) {
-  var scroll_offset = $(target).offset();
-  $('body,html').animate({
-    scrollTop: scroll_offset.top + (offset || 0),
-    easing: 'swing',
-  });
-}
+var Tips = (function(){
 
-function scrollToBoard() {
-  scrollToElement('#board', -$('#navbar').height());
-}
+	var $tipBox = $(".tips-box");
 
-// 防抖动函数
-function debounce(func, wait, immediate) {
-  var timeout;
-  return function() {
-    var context = this, args = arguments;
-    var later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-}
+	var bind = function(){
 
-$(document).ready(function () {
-  // 顶部菜单的动效
-  var navbar = $('#navbar');
-  if (navbar.offset().top > 0) {
-    navbar.addClass('navbar-custom');
-    navbar.removeClass('navbar-dark');
-  }
-  $(window).scroll(function () {
-    if (navbar.offset().top > 0) {
-      navbar.addClass('navbar-custom');
-      navbar.removeClass('navbar-dark');
-    } else {
-      navbar.addClass('navbar-dark');
-    }
-  });
-  $('#navbar-toggler-btn').on('click', function () {
-    $('.animated-icon').toggleClass('open');
-    $('#navbar').toggleClass('navbar-col-show');
-  });
+	}
 
-  // 头图滚动动画
-  $(window).scroll(function () {
-    var oVal = $(window).scrollTop() / 3;
-    $('#background[parallax="true"]').css({
-      transform: 'translate3d(0,' + oVal + 'px,0)',
-      '-webkit-transform': 'translate3d(0,' + oVal + 'px,0)',
-      '-ms-transform': 'translate3d(0,' + oVal + 'px,0)',
-      '-o-transform': 'translate3d(0,' + oVal + 'px,0)',
-    });
-  });
+	bind();
+	return {
+		show: function(){
+			$tipBox.removeClass("hide");
+		},
+		hide: function(){
+			$tipBox.addClass("hide");
+		},
+		init: function(){
+			
+		}
+	}
+})();
 
-  // 向下滚动箭头的点击
-  $('.scroll-down-bar').on('click', scrollToBoard);
+var Main = (function(){
 
-  // 向顶部滚动箭头
-  var topArrow = $('#scroll-top-button');
-  var posDisplay = false;
-  var scrollDisplay = false;
-  // 位置
-  var setTopArrowPos = function () {
-    var boardRight = document.getElementById('board').getClientRects()[0].right;
-    var bodyWidth = document.body.offsetWidth;
-    var right = bodyWidth - boardRight;
-    posDisplay = right >= 50;
-    topArrow.css({
-      'bottom': posDisplay && scrollDisplay ? '20px' : '-60px',
-      'right': right - 64 + 'px',
-    });
-  };
-  setTopArrowPos();
-  $(window).resize(setTopArrowPos);
-  // 显示
-  var headerHeight = $('#board').offset().top;
-  $(window).scroll(debounce(function () {
-    var scrollHeight = document.body.scrollTop + document.documentElement.scrollTop;
-    scrollDisplay = scrollHeight >= headerHeight;
-    topArrow.css({
-      'bottom': posDisplay && scrollDisplay ? '20px' : '-60px',
-    });
-  }, 20));
-  // 点击
-  topArrow.on('click', function () {
-    $('body,html').animate({
-      scrollTop: 0,
-      easing: 'swing',
-    });
-  });
-});
+	var resetTags = function(){
+		var tags = $(".tagcloud a");
+		tags.css({"font-size": "12px"});
+		for(var i=0,len=tags.length; i<len; i++){
+			//var num = parseInt(Math.random()*5+1);
+			var num = tags.eq(i).html().length % 5 +1;
+			tags[i].className = "";
+			tags.eq(i).addClass("color"+num);
+		}
+	}
+
+	var slide = function(idx){
+		var $wrap = $(".switch-wrap");
+		$wrap.css({
+			"transform": "translate(-"+idx*100+"%, 0 )"
+		});
+		$(".icon-wrap").addClass("hide");
+		$(".icon-wrap").eq(idx).removeClass("hide");
+	}
+
+	var bind = function(){
+		var switchBtn = $("#myonoffswitch");
+		var tagcloud = $(".second-part");
+		var navDiv = $(".first-part");
+		switchBtn.click(function(){
+			if(switchBtn.hasClass("clicked")){
+				switchBtn.removeClass("clicked");
+				tagcloud.removeClass("turn-left");
+				navDiv.removeClass("turn-left");
+			}else{
+				switchBtn.addClass("clicked");
+				tagcloud.addClass("turn-left");
+				navDiv.addClass("turn-left");
+				resetTags();
+			}
+		});
+
+		var timeout;
+		var isEnterBtn = false;
+		var isEnterTips = false;
+
+		$(".icon").bind("mouseenter", function(){
+			isEnterBtn = true;
+			Tips.show();
+		}).bind("mouseleave", function(){
+			isEnterBtn = false;
+			setTimeout(function(){
+				if(!isEnterTips){
+					Tips.hide();
+				}
+			}, 100);
+		});
+
+		$(".tips-box").bind("mouseenter", function(){
+			isEnterTips = true;
+			Tips.show();
+		}).bind("mouseleave", function(){
+			isEnterTips = false;
+			setTimeout(function(){
+				if(!isEnterBtn){
+					Tips.hide();
+				}
+			}, 100);
+		});
+
+		$(".tips-inner li").bind("click", function(){
+			var idx = $(this).index();
+			slide(idx);
+			Tips.hide();
+		});
+	}
+
+	var fancyInit = function(){
+		var isFancy = $(".isFancy");
+		if(isFancy.length != 0){
+			var imgArr = $(".article-inner img");
+			for(var i=0,len=imgArr.length;i<len;i++){
+				var src = imgArr.eq(i).attr("src");
+				var title = imgArr.eq(i).attr("alt");
+				imgArr.eq(i).replaceWith("<a href='"+src+"' title='"+title+"' rel='fancy-group' class='fancy-ctn fancybox'><img src='"+src+"' title='"+title+"'></a>");
+			}
+			$(".article-inner .fancy-ctn").fancybox();
+		}
+	}
+
+	var enterAnm = function(){
+		//avatar
+		$(".js-avatar").attr("src", $(".js-avatar").attr("lazy-src"));
+		$(".js-avatar")[0].onload = function(){
+			$(".js-avatar").addClass("show");
+		}
+
+		//article
+		function showArticle(){
+			$(".article").each(function(){
+				if( $(this).offset().top <= $(window).scrollTop()+$(window).height()*0.75 && !$(this).hasClass('show') ) {
+					$(this).addClass("show");
+				}
+			});
+		}
+		$(window).on('scroll', function(){
+			showArticle();
+		});
+		showArticle();
+	}
+
+	return {
+		init: function(){
+			resetTags();
+			bind();
+			enterAnm();
+			fancyInit();
+			Tips.init();
+			new Mobile({
+				ctn: document.getElementsByClassName("slider-trigger")[0]
+			});
+		}
+	}
+})();
+
+$(Main.init());
